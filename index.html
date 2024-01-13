@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Platformer Game with Obstacles</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      background-color: #f0f0f0;
+    }
+
+    .player {
+      width: 50px;
+      height: 50px;
+      background-color: #3498db;
+      position: absolute;
+    }
+
+    .obstacle {
+      width: 50px;
+      height: 20px;
+      background-color: #e74c3c;
+      position: absolute;
+    }
+
+    #jumpButton, #leftButton, #rightButton {
+      position: fixed;
+      padding: 10px;
+      background-color: #2ecc71;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    #jumpButton {
+      bottom: 20px;
+      right: 20px;
+    }
+
+    #leftButton {
+      bottom: 20px;
+      left: 20px;
+    }
+
+    #rightButton {
+      bottom: 20px;
+      left: 60px;
+    }
+
+    .finish {
+      width: 50px;
+      height: 50px;
+      background-color: #27ae60;
+      position: absolute;
+      top: 0;
+      right: 50px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <button id="jumpButton">Jump</button>
+  <button id="leftButton">Left</button>
+  <button id="rightButton">Right</button>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const player = {
+      x: 50,
+      y: canvas.height - 100,
+      width: 50,
+      height: 50,
+      color: '#3498db',
+      velocityX: 0,
+      velocityY: 0,
+      jumping: false,
+      jumpStrength: 10,
+      gravity: 1,
+    };
+
+    const obstacles = [
+      { x: 200, y: canvas.height - 50, width: 80, height: 20 },
+      { x: 400, y: canvas.height - 80, width: 80, height: 20 },
+      { x: 600, y: canvas.height - 120, width: 80, height: 20 },
+    ];
+
+    const finishPoint = {
+      x: canvas.width - 100,
+      y: 0,
+      width: 50,
+      height: 50,
+    };
+
+    function drawPlayer() {
+      ctx.fillStyle = player.color;
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+    }
+
+    function drawObstacles() {
+      ctx.fillStyle = '#e74c3c';
+      obstacles.forEach(obstacle => {
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+      });
+    }
+
+    function drawFinishPoint() {
+      ctx.fillStyle = '#27ae60';
+      ctx.fillRect(finishPoint.x, finishPoint.y, finishPoint.width, finishPoint.height);
+    }
+
+    function gameLoop() {
+      // Update game logic
+
+      if (player.jumping) {
+        player.velocityY = -player.jumpStrength;
+        player.jumping = false;
+      }
+
+      player.x += player.velocityX;
+      player.y += player.velocityY;
+      player.velocityY += player.gravity;
+
+      // Check for collisions with the ground
+      if (player.y + player.height > canvas.height) {
+        player.y = canvas.height - player.height;
+        player.velocityY = 0;
+      }
+
+      // Check for collisions with the canvas borders
+      if (player.x < 0) {
+        player.x = 0;
+      } else if (player.x + player.width > canvas.width) {
+        player.x = canvas.width - player.width;
+      }
+
+      // Check for collisions with obstacles
+      obstacles.forEach(obstacle => {
+        if (
+          player.x < obstacle.x + obstacle.width &&
+          player.x + player.width > obstacle.x &&
+          player.y < obstacle.y + obstacle.height &&
+          player.y + player.height > obstacle.y
+        ) {
+          // Collision with obstacle, reset position
+          player.x = 50;
+          player.y = canvas.height - 100;
+        }
+      });
+
+      // Check for reaching the finish point
+      if (
+        player.x < finishPoint.x + finishPoint.width &&
+        player.x + player.width > finishPoint.x &&
+        player.y < finishPoint.y + finishPoint.height &&
+        player.y + player.height > finishPoint.y
+      ) {
+        // Player reached the finish point
+        alert('Congratulations! You reached the finish point.');
+        // You may want to reset the game or do something else here
+      }
+
+      // Adjust the camera position based on the player's position
+      const cameraX = player.x - canvas.width / 2;
+      const cameraY = player.y - canvas.height / 2;
+
+      // Clear the canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw the player, obstacles, and finish point relative to the camera
+      drawPlayer();
+      drawObstacles();
+      drawFinishPoint();
+
+      // Repeat the loop
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Event listeners for controls
+    window.addEventListener('keydown', (event) => {
+      if (event.code === 'Space' && !player.jumping) {
+        player.jumping = true;
+      } else if (event.code === 'ArrowLeft') {
+        player.velocityX = -2;
+      } else if (event.code === 'ArrowRight') {
+        player.velocityX = 2;
+      }
+    });
+
+    window.addEventListener('keyup', (event) => {
+      if (event.code === 'ArrowLeft' || event.code === 'ArrowRight') {
+        player.velocityX = 0;
+      }
+    });
+
+    // Event listeners for button controls
+    const jumpButton = document.getElementById('jumpButton');
+    jumpButton.addEventListener('click', () => {
+      if (!player.jumping) {
+        player.jumping = true;
+      }
+    });
+
+    const leftButton = document.getElementById('leftButton');
+    leftButton.addEventListener('click', () => {
+      player.velocityX = -2;
+    });
+
+    const rightButton = document.getElementById('rightButton');
+    rightButton.addEventListener('click', () => {
+      player.velocityX = 2;
+    });
+
+    // Start the game loop
+    gameLoop();
+  </script>
+</body>
+</html>
